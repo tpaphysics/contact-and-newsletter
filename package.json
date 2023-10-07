@@ -1,0 +1,23 @@
+{
+  "name": "newsletter",
+  "version": "1.0.0",
+  "description": "Incrição em Newsletter com recursos da AWS",
+  "type": "module",
+  "main": "serverless.yml",
+  "scripts": {
+    "test": "vitest"
+  },
+  "author": "Thiago Pacheco",
+  "license": "MIT",
+  "dependencies": {
+    "aws-sdk": "^2.1469.0",
+    "jsonwebtoken": "^9.0.2",
+    "serverless-add-api-key": "^4.2.1",
+    "serverless-offline": "^13.2.0"
+  },
+  "devDependencies": {
+    "dotenv": "^16.3.1",
+    "serverless-dotenv-plugin": "^6.0.0",
+    "vitest": "^0.34.6"
+  }
+}

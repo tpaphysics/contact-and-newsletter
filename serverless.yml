@@ -1,0 +1,142 @@
+service: projeto-serverless
+useDotenv: true
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+  region: us-east-1
+  environment:
+    JWT_SECRET: ${env:JWT_SECRET}
+    JWT_EXPIRATION: ${env:JWT_EXPIRATION}
+    DYNAMO_TABLE_NAME: ${env:DYNAMO_TABLE_NAME}
+    SES_EMAIL_SOURCE: ${env:SES_EMAIL_SOURCE}
+    BASE_URL_LINK: ${env:BASE_URL_LINK}
+    SUBSCRIBE_QUEUE_URL:
+      Ref: SubscribeQueue
+    VERIFICATION_QUEUE_URL:
+      Ref: VerificationQueue
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:PutItem
+          Resource:
+            Fn::GetAtt:
+              - NewsletterTable
+              - Arn
+        - Effect: Allow
+          Action:
+            - sqs:SendMessage
+            - sqs:ReceiveMessage
+            - sqs:DeleteMessage
+            - sqs:GetQueueAttributes
+          Resource:
+            - Fn::GetAtt:
+                - SubscribeQueue
+                - Arn
+            - Fn::GetAtt:
+                - VerificationQueue
+                - Arn
+        - Effect: Allow
+          Action:
+            - ses:SendEmail
+            - ses:SendRawEmail
+          Resource: "*"
+
+resources:
+  Resources:
+    NewsletterTable:
+      Type: "AWS::DynamoDB::Table"
+      Properties:
+        TableName: ${self:provider.environment.DYNAMO_TABLE_NAME}
+        AttributeDefinitions:
+          - AttributeName: email
+            AttributeType: S
+        KeySchema:
+          - AttributeName: email
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+
+    SubscribeQueue:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        VisibilityTimeout: 15
+        RedrivePolicy:
+          deadLetterTargetArn:
+            Fn::GetAtt:
+              - "SubscribeDLQ"
+              - "Arn"
+          maxReceiveCount: 5
+
+    SubscribeDLQ:
+      Type: "AWS::SQS::Queue"
+
+    VerificationQueue:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        VisibilityTimeout: 15
+        RedrivePolicy:
+          deadLetterTargetArn:
+            Fn::GetAtt:
+              - "VerificationDLQ"
+              - "Arn"
+          maxReceiveCount: 5
+
+    VerificationDLQ:
+      Type: "AWS::SQS::Queue"
+
+custom:
+  apiKeys:
+    - name: myAPIKeyName
+
+functions:
+  subscribe:
+    handler: api/subscribe/handler.handler
+    memorySize: 256
+    timeout: 10
+    events:
+      - http:
+          path: subscribe
+          method: post
+          cors: true
+          private: true
+
+  confirm:
+    handler: api/confirm/handler.handler
+    memorySize: 256
+    timeout: 10
+    events:
+      - http:
+          path: confirm
+          method: get
+          cors: true
+
+  validateEmail:
+    handler: lambdas/validateEmail/index.handler
+    memorySize: 256
+    timeout: 10
+    events:
+      - sqs:
+          batchSize: 5
+          arn:
+            Fn::GetAtt:
+              - SubscribeQueue
+              - Arn
+
+  verifyEmail:
+    handler: lambdas/verifyEmail/index.handler
+    memorySize: 256
+    timeout: 10
+    events:
+      - sqs:
+          batchSize: 5
+          arn:
+            Fn::GetAtt:
+              - VerificationQueue
+              - Arn
+
+plugins:
+  - serverless-dotenv-plugin
+  - serverless-offline
+  - serverless-add-api-key
