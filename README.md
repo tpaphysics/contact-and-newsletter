@@ -15,9 +15,11 @@
 
 ## Introdução
 
-Neste projeto, utilizamos o AWS Serverless Framework para criar um sistema de inscrição em newsletter para o portal de notícias [Exploradores Modernos](https://exploradoresmodernos.com.br). Integrando serviços AWS como Lambda, API Gateway, SQS, DynamoDB e SES, conseguimos construir um fluxo eficiente conforme descrito abaixo.
+Neste projeto, utilizamos o AWS Serverless Framework para criar um sistema de inscrição em newsletter e formulario de contato para o portal de notícias [Exploradores Modernos](https://exploradoresmodernos.com.br). Integrando serviços AWS como Lambda, API Gateway, SQS, DynamoDB e SES, conseguimos construir um fluxo eficiente conforme descrito abaixo.
 
 ## Regras de negócio
+
+### Newsletter
 
 1. **Primeira requisição (API Gateway):**
    Uma API Gateway da AWS é configurada para receber uma requisição POST com o e-mail de um usuário que deseja se inscrever na newsletter.
@@ -45,6 +47,25 @@ Neste projeto, utilizamos o AWS Serverless Framework para criar um sistema de in
    O e-mail é salvo no DynamoDB como um inscrito confirmado.
 8. **Terceira Fila (SQS):**
    Após falha de 5 tentativas as menssagens são enviadas para uma fila de DLQ.
+
+### Formulário de Contato
+
+1. **Requisição (API Gateway):**
+   - Uma API Gateway da AWS é configurada para receber uma requisição POST do formulário de contato.
+   - Os campos típicos incluem nome, e-mail, assunto e mensagem.
+2. **Lambda de Processamento:**
+   - A requisição aciona esta função Lambda.
+   - Valida os campos recebidos, como formato do e-mail e presença de todos os campos obrigatórios.
+   - Prepara a mensagem formatada para envio por e-mail e a coloca em uma fila SQS para processamento posterior.
+3. **Fila de Contato (SQS):**
+   - A mensagem formatada é adicionada a esta fila.
+   - O processamento assíncrono garante rápida resposta ao usuário no front-end.
+4. **Lambda de Envio de E-mail:**
+   - Acionada pela mensagem na fila.
+   - Usa o Amazon SES para enviar a mensagem ao destinatário apropriado (por exemplo, equipe de suporte ou administrador do site).
+5. **Fila DLQ (SQS):**
+   - Em caso de falhas no envio do e-mail após várias tentativas, a mensagem é enviada para esta fila.
+   - Análise e ação corretiva podem ser tomadas para mensagens nesta fila.
 
 ## Iniciar
 
