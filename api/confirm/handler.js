@@ -9,12 +9,12 @@ export const handler = async (event) => {
   const token = event.queryStringParameters.token;
 
   try {
-    const email = verifyToken(token);
+    const { email, action } = verifyToken(token);
 
     await sqs
       .sendMessage({
         QueueUrl: VERIFICATION_QUEUE_URL,
-        MessageBody: JSON.stringify({ email }),
+        MessageBody: JSON.stringify({ email, action }),
       })
       .promise();
 

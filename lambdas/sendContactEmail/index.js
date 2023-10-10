@@ -18,7 +18,7 @@ export const handler = async (event) => {
         },
         Body: {
           Text: {
-            Data: `Nome: ${name}\nEmail: ${email}\nMensagem: ${message}`,
+            Data: `Nome: ${name}\nEmail: ${email}\nMensagem:\n\n ${message}`,
           },
         },
       },

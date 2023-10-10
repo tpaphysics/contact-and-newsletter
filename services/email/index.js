@@ -1,12 +1,15 @@
 import AWS from "aws-sdk";
-import confirmationTemplate from "./template.js";
+import subscription from "./subscription.js";
+import unsubscription from "./unsubscription.js";
 
 const ses = new AWS.SES();
 
 const NEWSLETTER_SES_EMAIL_SOURCE = process.env.NEWSLETTER_SES_EMAIL_SOURCE;
 
-const sendEmail = async (recipientEmail, confirmationLink) => {
-  const emailBody = confirmationTemplate.replace("[LINK]", confirmationLink);
+const sendEmail = async (recipientEmail, confirmationLink, action) => {
+  const template = action === "subscription" ? subscription : unsubscription;
+
+  const emailBody = template.replace("[LINK]", confirmationLink);
 
   const params = {
     Destination: {

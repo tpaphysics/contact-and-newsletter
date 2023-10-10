@@ -5,7 +5,6 @@ const { generateToken } = services;
 const BASE_URL_LINK = process.env.BASE_URL_LINK;
 
 export const handler = async (event) => {
-  // Se não houver registros, retorne rapidamente
   if (!event.Records || event.Records.length === 0) {
     return { statusCode: 204, message: "No records provided" };
   }
@@ -21,20 +20,31 @@ export const handler = async (event) => {
 };
 
 async function processRecord(record) {
-  const { email } = JSON.parse(record.body);
+  const { email, action } = JSON.parse(record.body);
 
   if (!isValidEmail(email)) {
     return { statusCode: 400, message: "Invalid email format" };
   }
+  if (!action) {
+    return { statusCode: 400, message: "Invalid action" };
+  }
 
-  const token = generateToken(email);
-  const confirmationLink = `${BASE_URL_LINK}/api/newsletter?token=${token}`;
+  const token = generateToken({ email, action });
+  const actionLink = `${BASE_URL_LINK}/api/newsletter?token=${token}`;
 
   try {
-    await sendEmail(email, confirmationLink);
-    return { statusCode: 200, message: "Confirmation email sent" };
+    await sendEmail(email, actionLink, action); // Adicionando 'action' como terceiro argumento
+
+    if (action === "subscribe") {
+      return {
+        statusCode: 200,
+        message: "Subscription confirmation email sent",
+      };
+    } else {
+      return { statusCode: 200, message: "Unsubscription email sent" };
+    }
   } catch (error) {
-    console.error("Error sending email:", error);
+    console.error(`Error sending ${action} email:`, error);
     return { statusCode: 500, message: error.message };
   }
 }

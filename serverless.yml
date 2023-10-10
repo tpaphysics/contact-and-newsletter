@@ -6,7 +6,6 @@ provider:
   runtime: nodejs16.x
   region: us-east-1
   environment:
-    DEPLOY_ENV: ${env:STAGE, 'dev'}
     JWT_SECRET: ${env:JWT_SECRET}
     JWT_EXPIRATION: ${env:JWT_EXPIRATION}
     DYNAMO_TABLE_NAME: ${env:DYNAMO_TABLE_NAME}
@@ -14,8 +13,8 @@ provider:
     BASE_URL_LINK: ${env:BASE_URL_LINK}
     CONTACT_RECEIVER_EMAIL: ${env:CONTACT_RECEIVER_EMAIL}
     CONTACT_SES_EMAIL_SOURCE: ${env:CONTACT_SES_EMAIL_SOURCE}
-    SUBSCRIBE_QUEUE_URL:
-      Ref: SubscribeQueue
+    SUBSCRIPTION_ACTION_QUEUE_URL:
+      Ref: SubscriptionActionQueue
     VERIFICATION_QUEUE_URL:
       Ref: VerificationQueue
     CONTACT_QUEUE_URL:
@@ -26,6 +25,7 @@ provider:
         - Effect: Allow
           Action:
             - dynamodb:PutItem
+            - dynamodb:DeleteItem
           Resource:
             Fn::GetAtt:
               - NewsletterTable
@@ -38,7 +38,7 @@ provider:
             - sqs:GetQueueAttributes
           Resource:
             - Fn::GetAtt:
-                - SubscribeQueue
+                - SubscriptionActionQueue
                 - Arn
             - Fn::GetAtt:
                 - VerificationQueue
@@ -67,18 +67,18 @@ resources:
             KeyType: HASH
         BillingMode: PAY_PER_REQUEST
 
-    SubscribeQueue:
+    SubscriptionActionQueue:
       Type: "AWS::SQS::Queue"
       Properties:
         VisibilityTimeout: 15
         RedrivePolicy:
           deadLetterTargetArn:
             Fn::GetAtt:
-              - "SubscribeDLQ"
+              - "SubscriptionActionDLQ"
               - "Arn"
           maxReceiveCount: 5
 
-    SubscribeDLQ:
+    SubscriptionActionDLQ:
       Type: "AWS::SQS::Queue"
 
     VerificationQueue:
@@ -114,13 +114,13 @@ custom:
     - name: myAPIKeyName
 
 functions:
-  subscribe:
-    handler: api/subscribe/handler.handler
+  subscription:
+    handler: api/subscription/handler.handler
     memorySize: 256
     timeout: 10
     events:
       - http:
-          path: subscribe
+          path: subscription
           method: post
           cors: true
           private: true
@@ -155,7 +155,7 @@ functions:
           batchSize: 5
           arn:
             Fn::GetAtt:
-              - SubscribeQueue
+              - SubscriptionActionQueue
               - Arn
 
   verifyEmail:
@@ -181,6 +181,7 @@ functions:
             Fn::GetAtt:
               - ContactQueue
               - Arn
+
 plugins:
   - serverless-dotenv-plugin
   - serverless-offline

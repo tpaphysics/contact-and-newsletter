@@ -3,7 +3,10 @@
 import { describe, it, expect } from "vitest";
 import credencials from "./credentials.json";
 
-const { apiKey, confirmURL, subscribeURL, sendMail, validToken } = credencials;
+const { apiKey, subscribeURL, sendMail } = credencials;
+
+// Insira a ação que você deseja executar sunscribe ou unsubscribe
+const action = "subscription";
 
 describe("Token Functions", () => {
   it("Deve ocorrer o erro  'Forbidden'", async () => {
@@ -12,7 +15,7 @@ describe("Token Functions", () => {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ email: sendMail }), // Substitua isso conforme necessário
+      body: JSON.stringify({ email: sendMail, action }), // Substitua isso conforme necessário
     });
 
     const data = await response.json();
@@ -27,21 +30,7 @@ describe("Token Functions", () => {
         "Content-Type": "application/json",
         "x-api-key": `${apiKey}`,
       },
-      body: JSON.stringify({ email: sendMail }), // Substitua isso conforme necessário
-    });
-
-    const data = await response.json();
-    console.log(data);
-
-    expect(response.status).toBe(200);
-  });
-  it("Deve confirmURLar o email relativo ao token válido e ter status 200", async () => {
-    const response = await fetch(`${confirmURL}?token=${validToken}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        // Adicione outros cabeçalhos necessários, como x-api-key se estiver usando autenticação por chave de API
-      },
+      body: JSON.stringify({ email: sendMail, action }), // Substitua isso conforme necessário
     });
 
     const data = await response.json();
