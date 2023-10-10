@@ -3,19 +3,23 @@ useDotenv: true
 
 provider:
   name: aws
-  runtime: nodejs14.x
+  runtime: nodejs16.x
   region: us-east-1
   environment:
     DEPLOY_ENV: ${env:STAGE, 'dev'}
     JWT_SECRET: ${env:JWT_SECRET}
     JWT_EXPIRATION: ${env:JWT_EXPIRATION}
     DYNAMO_TABLE_NAME: ${env:DYNAMO_TABLE_NAME}
-    SES_EMAIL_SOURCE: ${env:SES_EMAIL_SOURCE}
+    NEWSLETTER_SES_EMAIL_SOURCE: ${env:NEWSLETTER_SES_EMAIL_SOURCE}
     BASE_URL_LINK: ${env:BASE_URL_LINK}
+    CONTACT_RECEIVER_EMAIL: ${env:CONTACT_RECEIVER_EMAIL}
+    CONTACT_SES_EMAIL_SOURCE: ${env:CONTACT_SES_EMAIL_SOURCE}
     SUBSCRIBE_QUEUE_URL:
       Ref: SubscribeQueue
     VERIFICATION_QUEUE_URL:
       Ref: VerificationQueue
+    CONTACT_QUEUE_URL:
+      Ref: ContactQueue
   iam:
     role:
       statements:
@@ -39,6 +43,9 @@ provider:
             - Fn::GetAtt:
                 - VerificationQueue
                 - Arn
+            - Fn::GetAtt:
+                - ContactQueue
+                - Arn
         - Effect: Allow
           Action:
             - ses:SendEmail
@@ -49,7 +56,7 @@ resources:
   Resources:
     NewsletterTable:
       Type: "AWS::DynamoDB::Table"
-      #DeletionPolicy: Retain
+      DeletionPolicy: Retain
       Properties:
         TableName: ${self:provider.environment.DYNAMO_TABLE_NAME}
         AttributeDefinitions:
@@ -88,6 +95,20 @@ resources:
     VerificationDLQ:
       Type: "AWS::SQS::Queue"
 
+    ContactQueue:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        VisibilityTimeout: 15
+        RedrivePolicy:
+          deadLetterTargetArn:
+            Fn::GetAtt:
+              - "ContactDLQ"
+              - "Arn"
+          maxReceiveCount: 5
+
+    ContactDLQ:
+      Type: "AWS::SQS::Queue"
+
 custom:
   apiKeys:
     - name: myAPIKeyName
@@ -114,6 +135,17 @@ functions:
           method: get
           cors: true
 
+  contact:
+    handler: api/contact/handler.handler
+    memorySize: 256
+    timeout: 10
+    events:
+      - http:
+          path: contact
+          method: post
+          cors: true
+          private: true
+
   validateEmail:
     handler: lambdas/validateEmail/index.handler
     memorySize: 256
@@ -138,6 +170,17 @@ functions:
               - VerificationQueue
               - Arn
 
+  sendContactEmail:
+    handler: lambdas/sendContactEmail/index.handler
+    memorySize: 256
+    timeout: 10
+    events:
+      - sqs:
+          batchSize: 5
+          arn:
+            Fn::GetAtt:
+              - ContactQueue
+              - Arn
 plugins:
   - serverless-dotenv-plugin
   - serverless-offline

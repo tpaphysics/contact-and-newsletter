@@ -3,7 +3,7 @@ import confirmationTemplate from "./template.js";
 
 const ses = new AWS.SES();
 
-const SES_EMAIL_SOURCE = process.env.SES_EMAIL_SOURCE;
+const NEWSLETTER_SES_EMAIL_SOURCE = process.env.NEWSLETTER_SES_EMAIL_SOURCE;
 
 const sendEmail = async (recipientEmail, confirmationLink) => {
   const emailBody = confirmationTemplate.replace("[LINK]", confirmationLink);
@@ -24,7 +24,7 @@ const sendEmail = async (recipientEmail, confirmationLink) => {
         Data: "Confirmação de Inscrição na Newsletter",
       },
     },
-    Source: `${SES_EMAIL_SOURCE}`,
+    Source: `${NEWSLETTER_SES_EMAIL_SOURCE}`,
   };
 
   try {
