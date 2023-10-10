@@ -22,7 +22,14 @@ Neste projeto, utilizamos o AWS Serverless Framework para criar um sistema de in
 ### Newsletter
 
 1. **Primeira requisição (API Gateway):**
-   Uma API Gateway da AWS é configurada para receber uma requisição POST com o e-mail de um usuário que deseja se inscrever na newsletter.
+   Uma API Gateway da AWS é configurada para receber uma requisição POST com seguinte body:
+
+   ```json
+   {
+     "email": "anyMail@example.com",
+     "action": "subscription" // or "unsubscription"
+   }
+   ```
 
 2. **Primeira Fila (SQS):**
    O e-mail recebido é adicionado a uma fila do SQS.
@@ -31,7 +38,7 @@ Neste projeto, utilizamos o AWS Serverless Framework para criar um sistema de in
    Esta fila aciona uma função Lambda que:
 
    - Valida o formato do e-mail.
-   - Cria um token JWT com validade de 24 horas.
+   - Cria um token JWT com validade de 24 horas usando o email e o action.
    - Envia um e-mail de confirmação para o endereço fornecido, contendo um link com o token JWT.
 
 4. **Clique no Link:**
@@ -44,7 +51,10 @@ Neste projeto, utilizamos o AWS Serverless Framework para criar um sistema de in
    Esta segunda fila dispara uma nova função Lambda de verificação.
 
 7. **Lambda de Verificação:**
-   O e-mail é salvo no DynamoDB como um inscrito confirmado.
+
+   - Se o action for `subscription` o email é salvo em uma tabela no dynamodb.
+   - Se o action for `unsubscription` o email é removido da tabela se existir.
+
 8. **Terceira Fila (SQS):**
    Após falha de 5 tentativas as menssagens são enviadas para uma fila de DLQ.
 
