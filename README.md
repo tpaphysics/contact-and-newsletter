@@ -1,4 +1,4 @@
-## Newsletter Inscrição: AWS Serverless
+## Inscrição e cancelamento de Inscrição em Newsletter e recebimento de mensagens de contato
 
 <p align="center">
 <br/>
@@ -15,19 +15,35 @@
 
 ## Introdução
 
-Neste projeto, utilizamos o AWS Serverless Framework para criar um sistema de inscrição em newsletter e formulario de contato para o portal de notícias [Exploradores Modernos](https://exploradoresmodernos.com.br). Integrando serviços AWS como Lambda, API Gateway, SQS, DynamoDB e SES, conseguimos construir um fluxo eficiente conforme descrito abaixo.
+Neste projeto, utilizamos o AWS Serverless Framework para criar uma API serverless com as seguintes funcionalidades:
+
+### 1. Inscrição e cancelamento de inscrição na `Newsletter`
+
+<center><img src="/.assets/subscription.png"/><img src="/.assets/unsubscription.png"/></center>
+
+### 2. Recebimento de mensagens do formulário de contato `Fale Conosco`.
+
+<center><img src="/.assets/contact.png"/></center>
+
+utilizamos serviços da AWS como Lambda, API Gateway, SQS, DynamoDB e SES, conseguimos construir um fluxo eficiente conforme descrito abaixo.
+
+`OBS: Estamos fazendo ajustes ao site, em breve estará em produção.`
+
+Link [Newsletter](https://exploradoresmodernos.com.br/newsletter).
+Link [Fale Conosco](https://exploradoresmodernos.com.br/contact).
 
 ## Regras de negócio
 
 ### Newsletter
 
 1. **Primeira requisição (API Gateway):**
-   Uma API Gateway da AWS é configurada para receber uma requisição POST com seguinte body:
+   Uma API Gateway da AWS é configurada para receber uma requisição POST na rota `/subscrition` seguinte body:
 
-   ```json
+   ```js
+   //action = subscription | unsubscription
    {
-     "email": "anyMail@example.com",
-     "action": "subscription" // or "unsubscription"
+     "email": "example@example.com",
+     "action": "subscription"
    }
    ```
 
@@ -38,25 +54,33 @@ Neste projeto, utilizamos o AWS Serverless Framework para criar um sistema de in
    Esta fila aciona uma função Lambda que:
 
    - Valida o formato do e-mail.
-   - Cria um token JWT com validade de 24 horas usando o email e o action.
+   - Cria um token JWT com validade de 24 horas usando o paylod recebido:
+
+   ```js
+   {
+      "email": "example@example.com",,
+      "action": "subscription"
+   }
+   ```
+
    - Envia um e-mail de confirmação para o endereço fornecido, contendo um link com o token JWT.
 
 4. **Clique no Link:**
    O usuário recebe o e-mail e clica no link de confirmação que contém o token JWT.
 
 5. **Segunda requisição (API Gateway):**
-   Ao clicar no link, a API Gateway é acionada para receber uma requisição GET com o token, verifica sua validade e, se for válido, envia o e-mail para a segunda fila.
+   Ao clicar no link, uma requisição GET é feita a API Gateway na rota `/confirm?token=${user_token}`verifica sua validade e, se for válido, envia o e-mail para a segunda fila.
 
 6. **Segunda Fila (SQS):**
    Esta segunda fila dispara uma nova função Lambda de verificação.
 
 7. **Lambda de Verificação:**
 
-   - Se o action for `subscription` o email é salvo em uma tabela no dynamodb.
-   - Se o action for `unsubscription` o email é removido da tabela se existir.
+   - Se o action for `subscription`, o usuário está se inscrevendo na newsletter e o email será salvo em uma tabela no dynamodb.
+   - Se o action for `unsubscription`, o usuário esta cancelando a inscrição na newsletter e o email do usuário é removido da tabela no dynamodb.
 
 8. **Terceira Fila (SQS):**
-   Após falha de 5 tentativas as menssagens são enviadas para uma fila de DLQ.
+   Após falha de 5 tentativas as mensagens são enviadas para uma fila de DLQ.
 
 ### Formulário de Contato
 
