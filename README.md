@@ -1,4 +1,4 @@
-## Inscrição e cancelamento de Inscrição em Newsletter e recebimento de mensagens de contato
+## Newsletter e Recebimento de Mensagens de contato
 
 <p align="center">
 <br/>
@@ -19,18 +19,15 @@ Neste projeto, utilizamos o AWS Serverless Framework para criar uma API serverle
 
 ### 1. Inscrição e cancelamento de inscrição na `Newsletter`
 
-<center><img src="/.assets/subscription.png"/><img src="/.assets/unsubscription.png"/></center>
+<p align="center">
+<img src="/.assets/subscription.png"/><img src="/.assets/unsubscription.png"/><p align="center">
 
 ### 2. Recebimento de mensagens do formulário de contato `Fale Conosco`.
 
-<center><img src="/.assets/contact.png"/></center>
+<p align="center">
+<img src="/.assets/contact.png"/><p align="center">
 
-utilizamos serviços da AWS como Lambda, API Gateway, SQS, DynamoDB e SES, conseguimos construir um fluxo eficiente conforme descrito abaixo.
-
-`OBS: Estamos fazendo ajustes ao site, em breve estará em produção.`
-
-Link [Newsletter](https://exploradoresmodernos.com.br/newsletter).
-Link [Fale Conosco](https://exploradoresmodernos.com.br/contact).
+utilizamos serviços da AWS como Lambda, API Gateway, SQS, DynamoDB e SES, conseguimos construir um fluxo eficiente para o portal de noticias [Exploradores Modernos](https://exploradoresmodernos.com.br) conforme descrito abaixo.
 
 ## Regras de negócio
 
